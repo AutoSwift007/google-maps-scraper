@@ -5,48 +5,46 @@ import (
 	"context"
 	"database/sql"
 	"encoding/csv"
-	"flag"
+	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"runtime"
 	"strings"
 	"time"
 
-	// postgres driver
-	_ "github.com/jackc/pgx/v5/stdlib"
-
+	"github.com/gin-gonic/gin"
 	"github.com/gosom/scrapemate"
 	"github.com/gosom/scrapemate/adapters/writers/csvwriter"
 	"github.com/gosom/scrapemate/adapters/writers/jsonwriter"
 	"github.com/gosom/scrapemate/scrapemateapp"
 	"github.com/playwright-community/playwright-go"
-
 	"github.com/gosom/google-maps-scraper/gmaps"
 	"github.com/gosom/google-maps-scraper/postgres"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func main() {
-	// just install playwright
-	if os.Getenv("PLAYWRIGHT_INSTALL_ONLY") == "1" {
-		if err := installPlaywright(); err != nil {
-			os.Exit(1)
+	router := gin.Default()
+
+	// Define your API endpoint
+	router.GET("/scrape", func(c *gin.Context) {
+		// Call your scraping logic
+		err := scrapeHandler(c)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 
-		os.Exit(0)
-	}
+		// Return a success response
+		c.JSON(http.StatusOK, gin.H{"message": "Scraping completed successfully"})
+	})
 
-	if err := run(); err != nil {
-		os.Stderr.WriteString(err.Error() + "\n")
-
-		os.Exit(1)
-
-		return
-	}
-
-	os.Exit(0)
+	// Run the server
+	router.Run(":" + os.Getenv("PORT")) // Use the PORT environment variable provided by Heroku
 }
 
-func run() error {
+func scrapeHandler(c *gin.Context) error {
 	ctx := context.Background()
 	args := parseArgs()
 
@@ -58,7 +56,7 @@ func run() error {
 }
 
 func runFromLocalFile(ctx context.Context, args *arguments) error {
-	var input io.Reader
+		var input io.Reader
 
 	switch args.inputFile {
 	case "stdin":
@@ -181,7 +179,7 @@ func runFromDatabase(ctx context.Context, args *arguments) error {
 }
 
 func produceSeedJobs(ctx context.Context, args *arguments, provider scrapemate.JobProvider) error {
-	var input io.Reader
+		var input io.Reader
 
 	switch args.inputFile {
 	case "stdin":
@@ -207,6 +205,7 @@ func produceSeedJobs(ctx context.Context, args *arguments, provider scrapemate.J
 			return err
 		}
 	}
+
 
 	return nil
 }
@@ -284,3 +283,5 @@ func openPsqlConn(dsn string) (conn *sql.DB, err error) {
 
 	return
 }
+
+
