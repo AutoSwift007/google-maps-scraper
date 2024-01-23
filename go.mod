@@ -10,6 +10,7 @@ require (
 	github.com/mcnijman/go-emailaddress v1.1.1
 	github.com/playwright-community/playwright-go v0.2000.1
 	github.com/stretchr/testify v1.8.1
+        github.com/gin-gonic/gin v1.9.1
 )
 
 require (
